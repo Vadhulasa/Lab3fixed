@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Notes</string>
+    <string name="action_import">Import</string>
+    <string name="action_export">Export</string>
+    <string name="action_share">Share as File</string>
+    <string name="send_to">Share Text File Via</string>
+    <string name="note_activity_name">Write Notes</string>
+</resources>

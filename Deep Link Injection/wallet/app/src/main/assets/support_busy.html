@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>lbs Wallet Support</title>
+  <style>
+    :root {
+      --ink: #1e2a34;
+      --muted: #607180;
+      --card: #fffdf8;
+      --line: #dcc9af;
+      --alert: #f3a03d;
+      --alert-soft: #fff2dd;
+      --shadow: 0 18px 38px rgba(30, 42, 52, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Gill Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 12% 16%, rgba(243, 160, 61, 0.2), transparent 28%),
+        radial-gradient(circle at 88% 8%, rgba(12, 110, 123, 0.18), transparent 30%),
+        linear-gradient(150deg, #fffcf4 0%, #eaf5f8 100%);
+      animation: appear 0.45s ease-out;
+    }
+
+    .card {
+      max-width: 620px;
+      margin: 40px auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.7rem;
+    }
+
+    .notice {
+      margin: 14px 0;
+      border: 1px solid #f0be7b;
+      background: var(--alert-soft);
+      border-left: 8px solid var(--alert);
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0 0 10px;
+      line-height: 1.5;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #0f7f8d;
+      color: #ffffff;
+      text-decoration: none;
+      font-weight: 700;
+      background: linear-gradient(120deg, #0c6e7b 0%, #0f8f9f 100%);
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 14px;
+      }
+
+      .card {
+        margin-top: 18px;
+        border-radius: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>lbs Wallet Support</h1>
+    <p class="notice">We are busy now. Please contact us later.</p>
+    <p>Your request is important to us and we are currently handling a high number of support tickets.</p>
+    <p class="muted">Support hours: Mon-Fri, 09:00-17:00.</p>
+    <a class="back" href="file:///android_asset/wallet_home.html">Back to Wallet</a>
+  </div>
+</body>
+</html>

