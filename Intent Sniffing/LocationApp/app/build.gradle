@@ -28,7 +28,4 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     implementation 'org.osmdroid:osmdroid-android:6.1.5'
-
-    // Required for LocalBroadcastManager used in the intra-app broadcast fix
-    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
 }

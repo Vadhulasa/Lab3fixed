@@ -3,7 +3,6 @@ package tcs.lbs.locationapp;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
@@ -30,15 +29,13 @@ public class MainActivity extends AppCompatActivity
     IMapController mapController;
     MyLocationNewOverlay locationOverlay;
 
-    // Keep a reference so we can unregister in onDestroy
-    private MainActivityReceiver mainReceiver;
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Some configurations to use OSM (Open Street Map)
         Configuration.getInstance().load(getApplicationContext(), PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
         mapView = findViewById(R.id.mapView);
         mapView.setTileSource(TileSourceFactory.MAPNIK);
@@ -48,33 +45,32 @@ public class MainActivity extends AppCompatActivity
         GeoPoint startPoint = new GeoPoint(59.3293, 18.0686);
         mapController.setCenter(startPoint);
 
-        locationOverlay = new MyLocationNewOverlay(new GpsMyLocationProvider(getApplicationContext()), mapView);
+        // Location overlay to show users location in OSM
+        locationOverlay = new MyLocationNewOverlay(new GpsMyLocationProvider(getApplicationContext()),mapView);
         locationOverlay.enableMyLocation();
 
-        // FIX: Register via LocalBroadcastManager instead of the system broadcast bus.
-        // LocalBroadcastManager delivers only within this process, so IntentSniffer
-        // can no longer intercept intra-app location updates.
-        mainReceiver = new MainActivityReceiver();
-        IntentFilter filter = new IntentFilter("tcs.lbs.locationapp.MainActivityReceiver");
-        LocalBroadcastManager.getInstance(this).registerReceiver(mainReceiver, filter);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)   != PackageManager.PERMISSION_GRANTED
+        // Register MainActivityReceiver class to listen to broadcasts from ForegroundLocationService
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("tcs.lbs.locationapp.MainActivityReceiver");
+        if (android.os.Build.VERSION.SDK_INT >= 33)
+        {
+            registerReceiver(new MainActivityReceiver(), filter, Context.RECEIVER_NOT_EXPORTED);
+        }
+        else
+        {
+            registerReceiver(new MainActivityReceiver(), filter);
+        }
+
+
+        // Check if the app has access to device's Location
+        // Also check if the app has access to writing to external storage
+        // This is needed for OSM MapView to function correctly
+        // All of the tiles downloaded by OSM are stored locally, hence the need for this permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
             && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
         {
-            ActivityCompat.requestPermissions(this, new String[]{
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            }, 1);
-        }
-    }
-
-    @Override
-    protected void onDestroy()
-    {
-        super.onDestroy();
-        // Must unregister from LocalBroadcastManager explicitly
-        if (mainReceiver != null) {
-            LocalBroadcastManager.getInstance(this).unregisterReceiver(mainReceiver);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
     }
 
@@ -82,16 +78,22 @@ public class MainActivity extends AppCompatActivity
     {
         if (!ForegroundLocationService.isForegroundServiceRunning)
         {
+            // Starts the ForegroundLocationService !!
             Intent intent = new Intent(MainActivity.this, ForegroundLocationService.class);
             intent.setAction(ForegroundLocationService.ACTION_StartForegroundService);
             startService(intent);
+
+            // Adds location overlay and starts showing user location on MapView
             mapView.getOverlays().add(locationOverlay);
         }
         else
         {
+            // Stops the ForegroundLocationService !!
             Intent intent = new Intent(MainActivity.this, ForegroundLocationService.class);
             intent.setAction(ForegroundLocationService.ACTION_StopForegroundService);
             startService(intent);
+
+            // Removes location overlay and stops showing user location on MapView
             mapView.getOverlays().remove(locationOverlay);
         }
     }
@@ -100,24 +102,32 @@ public class MainActivity extends AppCompatActivity
     protected void onResume()
     {
         super.onResume();
-        if (ForegroundLocationService.isForegroundServiceRunning) {
+
+        if (ForegroundLocationService.isForegroundServiceRunning)
+        {
             mapView.getOverlays().add(locationOverlay);
         }
+
         mapView.onResume();
     }
 
-    @Override
-    public void onPause()
-    {
+    public void onPause(){
         super.onPause();
-        if (ForegroundLocationService.isForegroundServiceRunning) {
+
+        if (ForegroundLocationService.isForegroundServiceRunning)
+        {
             mapView.getOverlays().remove(locationOverlay);
         }
+
         mapView.onPause();
     }
 
+
+    // BroadcastReceiver class, this class enables MainActivity to receive broadcasts from ForegroundLocationService
     public class MainActivityReceiver extends BroadcastReceiver
     {
+
+        // If a broadcast intent is received, this method will be invoked.
         @Override
         public void onReceive(Context context, Intent intent)
         {
@@ -129,4 +139,5 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
+
 }
